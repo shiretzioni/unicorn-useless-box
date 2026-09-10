@@ -109,7 +109,7 @@
 
   .panels{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
 
-  .panel{ width:118px; display:flex; flex-direction:column; align-items:center; }
+  .panel{ position:relative; width:118px; display:flex; flex-direction:column; align-items:center; }
 
   .door-frame{
     position:relative;
@@ -148,15 +148,19 @@
 
   .interior{ position:relative; width:100%; height:52px; overflow:hidden; }
 
+  /* Travels relative to the whole panel (not clipped by .door-frame) so it can
+     reach all the way down from the doorway to the switch knob below. */
   .hand{
     position:absolute; left:50%; top:0;
     width:34px; height:60px;
-    transform:translate(-50%,-120%);
-    transition:transform .4s ease-in;
-    z-index:3;
+    transform:translate(-50%,-70px);
+    opacity:0;
+    transition:transform .4s ease-in, opacity .3s ease-in;
+    z-index:5;
+    pointer-events:none;
   }
-  .panel.hand-out .hand{ transform:translate(-50%,6px); transition:transform .45s cubic-bezier(.3,1.4,.5,1); }
-  .panel.hand-push .hand{ transform:translate(-50%,18px); transition:transform .18s ease-out; }
+  .panel.hand-out .hand{ transform:translate(-50%,40px); opacity:1; transition:transform .45s cubic-bezier(.3,1.4,.5,1), opacity .15s ease-out; }
+  .panel.hand-push .hand{ transform:translate(-50%,85px); opacity:1; transition:transform .18s ease-out; }
 
   .switch-housing{
     position:relative;
@@ -184,7 +188,7 @@
     transform:translateY(40px);
   }
   .lever:focus-visible{ outline:3px solid var(--focus); outline-offset:2px; }
-  .panel.open .lever, .panel.hand-out .lever, .panel.hand-push .lever{ transform:translateY(0); }
+  .panel.lever-open .lever{ transform:translateY(0); }
 
   .switch-label{
     margin-top:6px; font-size:10.5px; letter-spacing:.4px; color:#e9d9f5; opacity:.85;
@@ -347,14 +351,15 @@
       '<div class="door-frame">' +
         '<div class="door-half left"><svg viewBox="0 0 26 26">'+doorIcons[i]+'</svg></div>' +
         '<div class="door-half right"><svg viewBox="0 0 26 26">'+doorIcons[i]+'</svg></div>' +
-        '<div class="interior"><div class="hand">' +
-          '<svg viewBox="0 0 34 60" width="34" height="60">' +
-            '<rect x="9" y="0" width="16" height="34" rx="8" fill="#fff8ef" stroke="#e3d5c0" stroke-width="1.5"/>' +
-            '<rect x="6" y="26" width="22" height="12" rx="6" fill="#a78bfa"/>' +
-            '<path d="M11,34 L11,46 Q11,54 17,54 Q23,54 23,46 L23,34" fill="#3b2a4a"/>' +
-            '<path d="M13,54 L13,60 M17,54 L17,60 M21,54 L21,60" stroke="#3b2a4a" stroke-width="3" stroke-linecap="round"/>' +
-          '</svg>' +
-        '</div></div>' +
+        '<div class="interior"></div>' +
+      '</div>' +
+      '<div class="hand">' +
+        '<svg viewBox="0 0 34 60" width="34" height="60">' +
+          '<rect x="9" y="0" width="16" height="34" rx="8" fill="#fff8ef" stroke="#e3d5c0" stroke-width="1.5"/>' +
+          '<rect x="6" y="26" width="22" height="12" rx="6" fill="#a78bfa"/>' +
+          '<path d="M11,34 L11,46 Q11,54 17,54 Q23,54 23,46 L23,34" fill="#3b2a4a"/>' +
+          '<path d="M13,54 L13,60 M17,54 L17,60 M21,54 L21,60" stroke="#3b2a4a" stroke-width="3" stroke-linecap="round"/>' +
+        '</svg>' +
       '</div>' +
       '<div class="switch-housing">' +
         '<div class="lever-track"></div>' +
@@ -386,11 +391,13 @@
 
     async function run(){
       panel.classList.add('open');
+      panel.classList.add('lever-open');
       burstSparkles(frame, 3);
       await sleep(550);
       panel.classList.add('hand-out');
       await sleep(480);
       panel.classList.add('hand-push');
+      panel.classList.remove('lever-open');
       burstSparkles(interior, 2);
       await sleep(200);
       lever.setAttribute('aria-pressed','false');
